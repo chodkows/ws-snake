@@ -11,7 +11,7 @@ Available numeric types:
 
 ** WebAssembly function
 
-#+begin_src bash :tangle /home/chodkows/Git/rust/wa-snake/www/sum.wasm
+#+begin_src bash :!tangle /home/chodkows/Git/rust/wa-snake/www/sum.wasm
 (module
   (func $sum (param $a i32) (param $b i32) (result i32)
       local.get $a
@@ -104,7 +104,7 @@ https://webassembly.github.io/wabt/demo/wat2wasm
 Create int8 array and paste bytes from wasm.
 Put wasm function to the [[https://webassembly.github.io/wabt/demo/wat2wasm][site]] and download code. Take bytes using *xxd -g1 sum.wasm*
 In browser *byteArray* will be in decimal format insead of hex decimal
-#+begin_src html :tangle /home/chodkows/Git/rust/wa-snake/www/index.html
+#+begin_src html :!tangle /home/chodkows/Git/rust/wa-snake/www/index.html
 <!doctype html>
 <html lang="en">
     <head>
@@ -175,7 +175,7 @@ async function init() {
 init()
 #+end_src
 
-#+begin_src html :tangle /home/chodkows/Git/rust/wa-snake/www/public/index.html
+#+begin_src html :!tangle /home/chodkows/Git/rust/wa-snake/www/public/index.html
 <!doctype html>
 <html lang="en">
     <head>
@@ -201,7 +201,7 @@ Add to package.json
 **** Webpack config plugin
 Keep only static files in public. index.html should be in www
 
-#+begin_src html :tangle /home/chodkows/Git/rust/wa-snake/www/index.html
+#+begin_src html :!tangle /home/chodkows/Git/rust/wa-snake/www/index.html
 <!doctype html>
 <html lang="en">
     <head>
@@ -222,7 +222,7 @@ Install copy webpack plugin
 npm install --save copy-webpack-plugin
 #+end_src
 
-#+begin_src js :tangle /home/chodkows/Git/rust/wa-snake/www/webpack.config.js
+#+begin_src js :!tangle /home/chodkows/Git/rust/wa-snake/www/webpack.config.js
 const path = require("path");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
@@ -364,6 +364,8 @@ Load to memory
 #+end_src
 
 Access memory from js
+Create array of two bits. Because all 64KB are empty, thats why only 2 bits.
+Decode array to plain text.
 #+begin_src js :!tangle /home/chodkows/Git/rust/wa-snake/www/index.js
 async function init() {
     const importObject = {
@@ -381,9 +383,57 @@ async function init() {
     const wasm = await WebAssembly.instantiate(buffer, importObject);
     const sumFunction = wasm.instance.exports.sum;
     const wasmMemory = wasm.instance.exports.mem;
-  debugger
-    const result = sumFunction(100, 60);
-    console.log(result);
+    const uint8Array = new Uint8Array(wasmMemory.buffer, 0, 2);
+    const hiText = new TextDecoder().decode(uint8Array);
+
+    console.log(hiText);
 }
 init()
+#+end_src
+* JS memory
+
+*const memory = new WebAssembly.Memory({initial: 1});*
+Create a memory in js. This memory will be read by WebAssembly. In WebAssembly we put "Hello". Back in JS we can read this memory.
+#+begin_src js :!tangle /home/chodkows/Git/rust/wa-snake/www/index.js
+async function init() {
+    const memory = new WebAssembly.Memory({initial: 1});
+    const importObject = {
+      js: {
+        mem: memory
+      },
+      console: {
+        log: () => {
+          console.log("Just logging something!");
+        },
+        error: () => {
+          console.log("I am just error");
+        }
+      }
+    }
+    const response = await fetch("sum.wasm");
+    const buffer = await response.arrayBuffer();
+    const wasm = await WebAssembly.instantiate(buffer, importObject);
+    const uint8Array = new Uint8Array(memory.buffer, 0, 5);
+    const hiText = new TextDecoder().decode(uint8Array);
+
+    console.log(hiText);
+}
+init()
+#+end_src
+
+#+begin_src bash :!tangle /home/chodkows/Git/rust/wa-snake/www/import_memory.wasm
+(module
+  (import "console" "log" (func $log))
+  (import "console" "error" (func $error))
+  (memory (import "js" "mem") 1)
+  (data (i32.const 0) "Hello")
+  (func $sum (param $a i32) (param $b i32) (result i32)
+      call $log
+      call $error
+      local.get $a
+      local.get $b
+      i32.add
+  )
+  (export "sum" (func $sum))
+)
 #+end_src
