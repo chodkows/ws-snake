@@ -437,3 +437,43 @@ init()
   (export "sum" (func $sum))
 )
 #+end_src
+* Preparing the Game
+#+begin_src bash :dir /home/chodkows/Git/rust/wa-snake
+cat << EOF > Cargo.toml
+[package]
+name = "wa-snake"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wasm-bindgen = "0.2.63"
+
+[lib]
+crate-type = ["cdylib"]
+
+EOF
+#+end_src
+
+#+RESULTS:
+
+*#[wasm_bindgen]* macro for sharing for JS
+#+begin_src rust :tangle/home/chodkows/Git/rust/wa-snake/src/lib.rs
+  use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+pub fn great(name: &str) {
+    println!("Hi there {}", name);
+}
+#+end_src
+
+#+begin_src bash
+cargo install wasm-pack
+#+end_src
+
+#+begin_src bash
+wasm-pack build --target web
+#+end_src
+
+#+RESULTS:
