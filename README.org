@@ -448,7 +448,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wasm-bindgen = "0.2.63"
+wasm-bindgen = "0.2.83"
 
 [lib]
 crate-type = ["cdylib"]
@@ -459,8 +459,8 @@ EOF
 #+RESULTS:
 
 *#[wasm_bindgen]* macro for sharing for JS
-#+begin_src rust :tangle/home/chodkows/Git/rust/wa-snake/src/lib.rs
-  use wasm_bindgen::prelude::*;
+#+begin_src rust :tangle /home/chodkows/Git/rust/wa-snake/src/lib.rs
+use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub fn great(name: &str) {
@@ -472,8 +472,83 @@ pub fn great(name: &str) {
 cargo install wasm-pack
 #+end_src
 
+#+RESULTS:
+
 #+begin_src bash
 wasm-pack build --target web
 #+end_src
 
 #+RESULTS:
+Add wasm dependency:
+*"wa-snake": "file:../pkg"*
+#+begin_src json :tangle /home/chodkows/Git/rust/wa-snake/www/package.json
+{
+  "name": "www",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack-dev-server",
+    "build": "webpack build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "copy-webpack-plugin": "^11.0.0",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0",
+    "webpack-dev-server": "^4.11.1",
+    "wa-snake": "file:../pkg"
+  },
+  "description": ""
+}
+#+end_src
+
+#+begin_src bash :dir /home/chodkows/Git/rust/wa-snake/www :results scalar
+npm install
+#+end_src
+
+#+RESULTS:
+:
+: up to date, audited 327 packages in 862ms
+:
+: 42 packages are looking for funding
+:   run `npm fund` for details
+:
+: found 0 vulnerabilities
+
+Init is exported as default. Greet is exported as function.
+#+begin_src js :tangle ~/Git/rust/wa-snake/www/index.js
+import init, { great } from "wa-snake";
+
+async function start() {
+  const wasm = await init();
+  great("Wojtek");
+  console.log("Hello");
+}
+start()
+#+end_src
+
+Alternative
+#+begin_src js :!tangle ~/Git/rust/wa-snake/www/index.js
+import init from "wa-snake";
+
+async function start() {
+  const wasm = await init();
+  wasm.great("Wojtek");
+  console.log("Hello");
+}
+start()
+#+end_src
+
+
+Alternative
+#+begin_src js :!tangle ~/Git/rust/wa-snake/www/index.js
+import init, { great } from "wa-snake";
+
+init().then(wasm => {
+  wasm.great("Wojtek");
+  console.log("Hello");
+})
+#+end_src
