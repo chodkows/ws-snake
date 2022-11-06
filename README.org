@@ -459,7 +459,7 @@ EOF
 #+RESULTS:
 
 *#[wasm_bindgen]* macro for sharing for JS
-#+begin_src rust :tangle /home/chodkows/Git/rust/wa-snake/src/lib.rs
+#+begin_src rust :!tangle /home/chodkows/Git/rust/wa-snake/src/lib.rs
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -474,7 +474,7 @@ cargo install wasm-pack
 
 #+RESULTS:
 
-#+begin_src bash
+#+begin_src bash :dir /home/chodkows/Git/rust/wa-snake
 wasm-pack build --target web
 #+end_src
 
@@ -550,5 +550,102 @@ import init, { great } from "wa-snake";
 init().then(wasm => {
   wasm.great("Wojtek");
   console.log("Hello");
+
 })
 #+end_src
+
+Add ability to print to web browser console from rust
+Run external code from rust using *extern*
+#+begin_src rust :!tangle /home/chodkows/Git/rust/wa-snake/src/lib.rs
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+pub fn great(name: &str) {
+    alert(name);
+}
+
+#[wasm_bindgen]
+extern {
+    pub fn alert(s: &str);
+}
+#+end_src
+
+* Bootstrap js
+#+begin_src js :tangle ~/Git/rust/wa-snake/www/bootstrap.js
+import("./index.js").catch(e => console.error("Error importing index.js :", e))
+#+end_src
+
+Change webpack for bootstraping
+#+begin_src js :!tangle /home/chodkows/Git/rust/wa-snake/www/webpack.config.js
+const path = require("path");
+
+module.exports = {
+    entry: () => "./bootstrap.js",
+    output: {
+      path: path.resolve(__dirname, "public"),
+      filename: "bootstrap.js"
+    },
+    mode: "development"
+}
+#+end_src
+
+Change index.html for bootstraping
+#+begin_src html :tangle /home/chodkows/Git/rust/wa-snake/www/public/index.html
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Hello world</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <h1>hello world</h1>
+        <script src="./bootstrap.js"></script>
+    </body>
+</html>
+#+end_src
+
+* Wasm size - wee_alloc
+
+#+begin_src bash :dir /home/chodkows/Git/rust/wa-snake
+cat << EOF > Cargo.toml
+[package]
+name = "wa-snake"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wasm-bindgen = "0.2.83"
+wee_alloc = "0.4.5"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+EOF
+#+end_src
+
+#+RESULTS:
+
+
+
+#+begin_src rust :!tangle /home/chodkows/Git/rust/wa-snake/src/lib.rs
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+pub fn great(name: &str) {
+    alert(name);
+}
+
+#[wasm_bindgen]
+extern {
+    pub fn alert(s: &str);
+}
+#+end_src
+
+#+begin_src bash :dir /home/chodkows/Git/rust/wa-snake
+wasm-pack build --target web
+#+end_src
+
+#+RESULTS:
